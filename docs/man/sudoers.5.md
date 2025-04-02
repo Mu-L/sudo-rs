@@ -1,6 +1,6 @@
-<!-- ---
+---
 title: SUDOERS(5) sudo-rs 0.2.4 | sudo-rs
---- -->
+---
 
 # NAME
 
@@ -353,7 +353,7 @@ sudo's behavior can be modified by Default_Entry lines, as explained earlier.  A
   If set, sudo will prompt for the root password instead of the password of the invoking user when running a command or editing a file.  This flag is off by default.
 
 * use_pty
-  
+
   If set, and sudo is running in a terminal, the command will be run in a pseudo-terminal (even if no I/O logging is being done).  If the sudo process is not attached to a terminal, use_pty has no effect.
 
   A malicious program run under sudo may be capable of injecting commands into the user's terminal or running a background process that retains access to the user's terminal device even after the main program has finished executing.  By running the command in a separate pseudo-terminal, this attack is no longer possible.  This flag is on by default.
@@ -368,7 +368,7 @@ sudo's behavior can be modified by Default_Entry lines, as explained earlier.  A
 
 * timestamp_timeout
 
-  Number of minutes that can elapse before sudo will ask for a passwd again.  The timeout may include a fractional component if minute granularity is insufficient, for example 2.5.  The default is 15.  Set this to 0 to always prompt for a password.  If set to a value less than 0 the user's timestamp will not expire until the system is rebooted.  This can be used to allow users to create or delete their own timestamps via “sudo -v” and “sudo -k” respectively.
+  Number of minutes that can elapse before sudo will ask for a passwd again.  The timeout may include a fractional component if minute granularity is insufficient, for example 2.5.  The default is 15.  Set this to 0 to always prompt for a password.
 
 ## Strings that can be used in a boolean context:
 

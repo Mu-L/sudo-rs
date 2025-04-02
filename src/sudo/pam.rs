@@ -9,6 +9,7 @@ use crate::system::term::current_tty_name;
 pub(super) struct InitPamArgs<'a> {
     pub(super) launch: LaunchType,
     pub(super) use_stdin: bool,
+    pub(super) bell: bool,
     pub(super) non_interactive: bool,
     pub(super) password_feedback: bool,
     pub(super) auth_prompt: Option<String>,
@@ -22,6 +23,7 @@ pub(super) fn init_pam(
     InitPamArgs {
         launch,
         use_stdin,
+        bell,
         non_interactive,
         password_feedback,
         auth_prompt,
@@ -39,6 +41,7 @@ pub(super) fn init_pam(
         "sudo",
         service_name,
         use_stdin,
+        bell,
         non_interactive,
         password_feedback,
         None,
@@ -60,7 +63,9 @@ pub(super) fn init_pam(
                     continue;
                 }
                 match chars.next() {
-                    Some('H' | 'h') => final_prompt.push_str(hostname),
+                    Some('H') => final_prompt.push_str(hostname),
+                    Some('h') => final_prompt
+                        .push_str(hostname.split_once('.').map(|x| x.0).unwrap_or(hostname)),
                     Some('p') => final_prompt.push_str(auth_user),
                     Some('U') => final_prompt.push_str(target_user),
                     Some('u') => final_prompt.push_str(requesting_user),

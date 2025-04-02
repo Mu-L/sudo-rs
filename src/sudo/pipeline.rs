@@ -130,7 +130,7 @@ pub fn run_validate(cmd_opts: SudoValidateOptions) -> Result<(), Error> {
 
     let mut context = Context::from_validate_opts(cmd_opts)?;
 
-    match policy.validate_authorization() {
+    match policy.check_validate_permission(&*context.current_user, &context.hostname) {
         Authorization::Forbidden => {
             return Err(Error::Authorization(context.current_user.name.to_string()));
         }
@@ -174,6 +174,7 @@ fn auth_and_update_record_file(
     let mut pam_context = init_pam(InitPamArgs {
         launch: context.launch,
         use_stdin: context.stdin,
+        bell: context.bell,
         non_interactive: context.non_interactive,
         password_feedback: context.password_feedback,
         auth_prompt: context.prompt.clone(),

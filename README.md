@@ -109,14 +109,9 @@ cargo build --release
 This produces a binary `target/release/sudo`. However, this binary must have
 the setuid flag set and must be owned by the root user in order to provide any
 useful functionality. Consult your operating system manual for details.
-On operating systems other than Linux we also require an environment variable
-`SUDO_RS_IS_UNSTABLE` to be set, and it must have the value
-`I accept that my system may break unexpectedly`. This because we are in an
-early stage of supporting non-Linux OSes. If you are unsure about how to set
-this up, then the current version of sudo is not intended for you.
 
 Sudo-rs then also needs the configuration files; please follow the installation
-suggestions in the previous sction.
+suggestions in the previous section.
 
 ### Feature flags
 By default, sudo-rs will use the PAM service name `sudo`. On Debian and Fedora
@@ -198,4 +193,8 @@ extract parts of our work in usable crates for other people.
 
 The initial development of sudo-rs was started and funded by the [Internet Security Research Group](https://www.abetterinternet.org/) as part of the [Prossimo project](https://www.memorysafety.org/).
 
-An independent security audit of sudo-rs was made possible by the [NLNet Foundation](https://nlnet.nl/).
+An independent security audit of sudo-rs was made possible by the [NLNet Foundation](https://nlnet.nl/), who also [sponsored](https://nlnet.nl/project/sudo-rs/) several feature additions and the FreeBSD porting effort.
+
+## Acknowledgement
+
+Sudo-rs is an independent implementation, but it incorporates documentation and Rust translations of code from [sudo](https://www.sudo.ws/), maintained by Todd C. Miller. We thank Todd and the other sudo contributors for their work.

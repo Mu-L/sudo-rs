@@ -25,14 +25,14 @@ jobs:
         run: docker buildx create --name builder --use
 
       - name: cache docker layers
-        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
         with:
           path: /tmp/.buildx-cache
           key: docker-buildx-rs-${{ github.sha }}
           restore-keys: docker-buildx-rs-
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
           shared-key: "compliance-tests"
           workspaces: |
@@ -78,7 +78,7 @@ jobs:
         run: docker buildx create --name builder --use
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
           shared-key: "compliance-tests"
           workspaces: |
@@ -109,14 +109,14 @@ jobs:
         run: docker buildx create --name builder --use
 
       - name: cache docker layers
-        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
         with:
           path: /tmp/.buildx-cache
           key: docker-buildx-rs-${{ github.sha }}
           restore-keys: docker-buildx-rs-
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
           shared-key: "compliance-tests"
           workspaces: |
@@ -154,7 +154,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
           shared-key: "compliance-tests"
           workspaces: |
@@ -186,7 +186,7 @@ jobs:
         run: rustup component add llvm-tools
 
       - name: Add cargo-llvm-cov
-        uses: taiki-e/install-action@0b63bc859f7224657cf7e39426848cabaa36f456
+        uses: taiki-e/install-action@575f713d0233afba556737a7b85080563be14186
         with:
           tool: cargo-llvm-cov
 
@@ -196,7 +196,7 @@ jobs:
           sudo apt install libpam0g-dev
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
           shared-key: "stable"
 
@@ -231,7 +231,7 @@ jobs:
           sudo apt install libpam0g-dev
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
           shared-key: "nightly"
 
@@ -262,7 +262,7 @@ jobs:
           sudo apt install libpam0g-dev
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
           shared-key: "msrv"
 
@@ -274,6 +274,36 @@ jobs:
 
       - name: Run tests
         run: cargo test --workspace --all-targets --release
+
+  build-and-test-fedora:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Install dependencies
+        run: |
+          dnf install -y cargo pam-devel
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+        with:
+          shared-key: "stable-fedora"
+
+      - name: Register rust problem matcher
+        run: echo "::add-matcher::.github/problem-matchers/rust.json"
+
+      - name: Reduce privileges
+        run: |
+          useradd builder
+          chown builder .
+
+      - name: Build
+        run: sudo -ubuilder cargo build --workspace --all-targets --release
+
+      - name: Run tests
+        run: sudo -ubuilder cargo test --workspace --all-targets --release
 
   miri:
     needs: build-and-test
@@ -294,7 +324,7 @@ jobs:
           sudo apt install libpam0g-dev
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
           shared-key: miri
 
@@ -316,7 +346,7 @@ jobs:
           sudo apt install libpam0g-dev
 
       - name: Install rust-bindgen
-        uses: taiki-e/install-action@0b63bc859f7224657cf7e39426848cabaa36f456
+        uses: taiki-e/install-action@575f713d0233afba556737a7b85080563be14186
         with:
           tool: bindgen-cli@0.70.1
 
@@ -350,7 +380,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
           shared-key: "stable"
 
@@ -369,7 +399,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
           shared-key: "stable"
 
@@ -386,7 +416,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Install cargo-audit
-        uses: taiki-e/install-action@0b63bc859f7224657cf7e39426848cabaa36f456
+        uses: taiki-e/install-action@575f713d0233afba556737a7b85080563be14186
         with:
           tool: cargo-audit
 

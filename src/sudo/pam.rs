@@ -9,6 +9,7 @@ use crate::system::term::current_tty_name;
 pub(super) struct InitPamArgs<'a> {
     pub(super) launch: LaunchType,
     pub(super) use_stdin: bool,
+    pub(super) bell: bool,
     pub(super) non_interactive: bool,
     pub(super) password_feedback: bool,
     pub(super) auth_prompt: Option<String>,
@@ -22,6 +23,7 @@ pub(super) fn init_pam(
     InitPamArgs {
         launch,
         use_stdin,
+        bell,
         non_interactive,
         password_feedback,
         auth_prompt,
@@ -39,14 +41,14 @@ pub(super) fn init_pam(
         "sudo",
         service_name,
         use_stdin,
+        bell,
         non_interactive,
         password_feedback,
-        None,
+        Some(auth_user),
     )?;
     pam.mark_silent(matches!(launch, LaunchType::Direct));
     pam.mark_allow_null_auth_token(false);
     pam.set_requesting_user(requesting_user)?;
-    pam.set_user(auth_user)?;
 
     match auth_prompt.as_deref() {
         None => {}
@@ -60,7 +62,9 @@ pub(super) fn init_pam(
                     continue;
                 }
                 match chars.next() {
-                    Some('H' | 'h') => final_prompt.push_str(hostname),
+                    Some('H') => final_prompt.push_str(hostname),
+                    Some('h') => final_prompt
+                        .push_str(hostname.split_once('.').map(|x| x.0).unwrap_or(hostname)),
                     Some('p') => final_prompt.push_str(auth_user),
                     Some('U') => final_prompt.push_str(target_user),
                     Some('u') => final_prompt.push_str(requesting_user),
@@ -85,13 +89,14 @@ pub(super) fn init_pam(
 
 pub(super) fn attempt_authenticate(
     pam: &mut PamContext,
+    auth_user: &str,
     non_interactive: bool,
     mut max_tries: u16,
 ) -> Result<(), Error> {
     let mut current_try = 0;
     loop {
         current_try += 1;
-        match pam.authenticate() {
+        match pam.authenticate(auth_user) {
             // there was no error, so authentication succeeded
             Ok(_) => break,
 

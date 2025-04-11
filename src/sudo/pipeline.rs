@@ -23,7 +23,7 @@ mod list;
 pub(super) use list::run_list;
 
 fn read_sudoers() -> Result<Sudoers, Error> {
-    let sudoers_path = super::candidate_sudoers_file();
+    let sudoers_path = &super::candidate_sudoers_file();
 
     let (sudoers, syntax_errors) =
         Sudoers::open(sudoers_path).map_err(|e| Error::Configuration(format!("{e}")))?;
@@ -130,7 +130,7 @@ pub fn run_validate(cmd_opts: SudoValidateOptions) -> Result<(), Error> {
 
     let mut context = Context::from_validate_opts(cmd_opts)?;
 
-    match policy.validate_authorization() {
+    match policy.check_validate_permission(&*context.current_user, &context.hostname) {
         Authorization::Forbidden => {
             return Err(Error::Authorization(context.current_user.name.to_string()));
         }
@@ -174,6 +174,7 @@ fn auth_and_update_record_file(
     let mut pam_context = init_pam(InitPamArgs {
         launch: context.launch,
         use_stdin: context.stdin,
+        bell: context.bell,
         non_interactive: context.non_interactive,
         password_feedback: context.password_feedback,
         auth_prompt: context.prompt.clone(),
@@ -183,7 +184,12 @@ fn auth_and_update_record_file(
         hostname: &context.hostname,
     })?;
     if auth_status.must_authenticate {
-        attempt_authenticate(&mut pam_context, context.non_interactive, allowed_attempts)?;
+        attempt_authenticate(
+            &mut pam_context,
+            &auth_user.name,
+            context.non_interactive,
+            allowed_attempts,
+        )?;
         if let (Some(record_file), Some(scope)) = (&mut auth_status.record_file, scope) {
             match record_file.create(scope, context.current_user.uid) {
                 Ok(_) => (),

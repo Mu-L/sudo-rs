@@ -240,11 +240,20 @@ fn permission_test() {
     pass!(["Runas_Alias TIME=%wheel,!!sudo","user ALL=(:TIME) ALL"], "user" => request! { user, sudo }, "vm"; "/bin/ls");
     pass!(["Runas_Alias TIME=%wheel,!!sudo","user ALL=(TIME) ALL"], "user" => request! { wheel, wheel }, "vm"; "/bin/ls");
 
-    pass!(["Runas_Alias \\"," TIME=%wheel\\",",sudo # hallo","user ALL\\","=(TIME) ALL"], "user" => request! { wheel, wheel }, "vm"; "/bin/ls");
+    pass!(["Runas_Alias \\"," TIME=%wheel \\",",sudo # hallo","user ALL \\","=(TIME) ALL"], "user" => request! { wheel, wheel }, "vm"; "/bin/ls");
 
     // test the less-intuitive "substition-like" alias mechanism
     FAIL!(["User_Alias FOO=!user", "ALL, FOO ALL=ALL"], "user" => root(), "vm"; "/bin/ls");
     pass!(["User_Alias FOO=!user", "!FOO ALL=ALL"], "user" => root(), "vm"; "/bin/ls");
+
+    // quoting
+    pass!(["a\\,b ALL=ALL"], "a,b" => request! { root, root }, "server"; "/bin/foo");
+    pass!(["\"a,b\" ALL=ALL"], "a,b" => request! { root, root }, "server"; "/bin/foo");
+    pass!(["\"a\\b\" ALL=ALL"], "a\\b" => request! { root, root }, "server"; "/bin/foo");
+
+    // apparmor
+    #[cfg(feature = "apparmor")]
+    pass!(["ALL ALL=(ALL:ALL) APPARMOR_PROFILE=unconfined ALL"], "user" => root(), "server"; "/bin/bar" => [apparmor_profile: Some("unconfined".to_string())]);
 }
 
 #[test]

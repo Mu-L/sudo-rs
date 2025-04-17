@@ -4,6 +4,7 @@ use super::Judgement;
 use crate::common::{
     SudoPath, HARDENED_ENUM_VALUE_0, HARDENED_ENUM_VALUE_1, HARDENED_ENUM_VALUE_2,
 };
+use crate::sudoers::ast::Tag;
 use crate::system::{time::Duration, Hostname, User};
 /// Data types and traits that represent what the "terms and conditions" are after a succesful
 /// permission check.
@@ -28,12 +29,15 @@ pub struct Authentication {
     pub allowed_attempts: u16,
     pub prior_validity: Duration,
     pub pwfeedback: bool,
+    #[cfg(feature = "apparmor")]
+    #[expect(dead_code)] // TODO: this attribute should be removed
+    pub apparmor_profile: Option<String>,
 }
 
 impl super::Settings {
-    fn to_auth(&self) -> Authentication {
+    pub(super) fn to_auth(&self, tag: &Tag) -> Authentication {
         Authentication {
-            must_authenticate: true,
+            must_authenticate: tag.needs_passwd(),
             allowed_attempts: self.passwd_tries().try_into().unwrap(),
             prior_validity: Duration::seconds(self.timestamp_timeout()),
             pwfeedback: self.pwfeedback(),
@@ -44,6 +48,8 @@ impl super::Settings {
             } else {
                 AuthenticatingUser::InvokingUser
             },
+            #[cfg(feature = "apparmor")]
+            apparmor_profile: tag.apparmor_profile.clone(),
         }
     }
 }
@@ -79,10 +85,7 @@ impl Judgement {
     pub fn authorization(&self) -> Authorization<Restrictions> {
         if let Some(tag) = &self.flags {
             Authorization::Allowed(
-                Authentication {
-                    must_authenticate: tag.needs_passwd(),
-                    ..self.settings.to_auth()
-                },
+                self.settings.to_auth(tag),
                 Restrictions {
                     use_pty: self.settings.use_pty(),
                     trust_environment: tag.allows_setenv(),
@@ -111,10 +114,6 @@ impl Sudoers {
     ) -> Option<&str> {
         self.specify_host_user_runas(on_host, current_user, target_user);
         self.settings.secure_path()
-    }
-
-    pub fn validate_authorization(&self) -> Authorization<()> {
-        Authorization::Allowed(self.settings.to_auth(), ())
     }
 }
 

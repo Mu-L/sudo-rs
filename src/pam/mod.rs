@@ -47,11 +47,13 @@ impl PamContext {
         converser_name: &str,
         service_name: &str,
         use_stdin: bool,
+        bell: bool,
         no_interact: bool,
         password_feedback: bool,
         target_user: Option<&str>,
     ) -> PamResult<PamContext> {
         let converser = CLIConverser {
+            bell,
             name: converser_name.to_owned(),
             use_stdin,
             password_feedback,
@@ -69,7 +71,10 @@ impl PamContext {
             converser,
             converser_name: converser_name.to_owned(),
             no_interact,
-            auth_prompt: Some("authenticate".to_owned()),
+            auth_prompt: std::env::var("SUDO_PROMPT")
+                .ok()
+                .filter(|s| !s.is_empty())
+                .or(Some("authenticate".to_owned())),
             panicked: false,
         }));
 
@@ -103,6 +108,7 @@ impl PamContext {
     }
 
     pub fn set_auth_prompt(&mut self, prompt: Option<String>) {
+        // SAFETY: self.data_ptr was created by Box::into_raw
         unsafe {
             (*self.data_ptr).auth_prompt = prompt;
         }
@@ -139,7 +145,7 @@ impl PamContext {
     }
 
     /// Run authentication for the account
-    pub fn authenticate(&mut self) -> PamResult<()> {
+    pub fn authenticate(&mut self, for_user: &str) -> PamResult<()> {
         let mut flags = 0;
         flags |= self.silent_flag();
         flags |= self.disallow_null_auth_token_flag();
@@ -150,6 +156,19 @@ impl PamContext {
         if self.has_panicked() {
             panic!("Panic during pam authentication");
         }
+
+        // Check that no PAM module changed the user.
+        match self.get_user() {
+            Ok(pam_user) => {
+                if pam_user != for_user {
+                    return Err(PamError::InvalidUser(pam_user, for_user.to_string()));
+                }
+            }
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
         Ok(())
     }
 

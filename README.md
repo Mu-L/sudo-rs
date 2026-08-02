@@ -124,6 +124,11 @@ To install the `sudo-rs` version of `su`, which is packaged separately, run:
 apk add sudo-rs-su
 ```
 
+#### postmarketOS
+
+On postmarketOS, sudo-rs is installed and enabled by default on all new installs.
+
+
 ### Installing our pre-compiled x86-64 binaries
 
 You can also switch to sudo-rs manually by using our pre-compiled tarballs.

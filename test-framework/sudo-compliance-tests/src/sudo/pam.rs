@@ -509,7 +509,7 @@ auth requisite pam_deny.so
 #[test]
 #[ignore = "gh1665"]
 fn loads_pam_groups() {
-    let env = Env(format!("ALL ALL=(ALL:ALL) ALL"))
+    let env = Env("ALL ALL=(ALL:ALL) ALL".to_string())
         .group(GROUPNAME)
         .user(User(USERNAME).password(PASSWORD))
         .file(

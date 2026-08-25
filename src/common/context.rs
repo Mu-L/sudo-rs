@@ -114,19 +114,22 @@ impl Context {
 
         // resolve file arguments; if something can't be resolved, don't add it to the "edit" list
         let resolved_args = sudo_call(&target_user, &target_group, || {
-            sudo_options.positional_args.iter().map(|arg| {
-                let path = Path::new(arg);
-                let absolute_path;
-                crate::common::resolve::canonicalize_newfile(if path.is_absolute() {
-                    path
-                } else {
-                    absolute_path = Path::new(".").join(path);
-                    &absolute_path
+            sudo_options
+                .positional_args
+                .iter()
+                .map(|arg| {
+                    let path = Path::new(arg);
+                    let absolute_path;
+                    crate::common::resolve::canonicalize_newfile(if path.is_absolute() {
+                        path
+                    } else {
+                        absolute_path = Path::new(".").join(path);
+                        &absolute_path
+                    })
+                    .map_err(|_| arg)
+                    .and_then(|path| path.into_os_string().into_string().map_err(|_| arg))
                 })
-                .map_err(|_| arg)
-                .and_then(|path| path.into_os_string().into_string().map_err(|_| arg))
-            })
-            .collect::<Vec<_>>()
+                .collect::<Vec<_>>()
         })?;
 
         let files_to_edit = resolved_args

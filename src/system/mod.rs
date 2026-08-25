@@ -520,6 +520,31 @@ impl User {
             unsafe { Self::from_libc(&pwd).map(Some) }
         }
     }
+
+    pub fn real_groups() -> Result<Vec<GroupId>, Error> {
+        // From man getgroups:
+        //   The maximum number of supplementary group IDs can be found at run time using sysconf(3):
+        //   ngroups_max = sysconf(_SC_NGROUPS_MAX);
+        //   The  maximum  return  value of getgroups() cannot be larger than one more than this value.
+        // So, unlike the "_MAX" definitions above which suggest an initial size, this really is the "max" value.
+        let len = sysconf(libc::_SC_NGROUPS_MAX).unwrap_or(65536) as usize;
+        let mut groups = vec![GroupId::new(u32::MAX); len];
+
+        let len = len
+            .try_into()
+            .expect("_SC_NGROUPS_MAX should fit in a c_int");
+
+        // SAFETY: getgroups is passed a valid pointer to a chunk of memory of the correct size
+        // We can cast to gid_t because `GroupId` is marked as transparent
+        let num_groups =
+            cerr(unsafe { libc::getgroups(len, groups.as_mut_ptr().cast::<libc::gid_t>()) })?;
+
+        groups.resize_with(num_groups as usize, || {
+            panic!("invalid groups count returned from getgroups, this should not happen")
+        });
+
+        Ok(groups)
+    }
 }
 
 #[derive(Debug, Clone)]

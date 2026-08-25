@@ -522,6 +522,30 @@ mod test {
     }
 
     #[test]
+    fn empty_prompt_does_not_write_to_sink() {
+        let mut sink = Vec::new();
+        let (rx, mut tx) = make_pipe();
+        tx.write_all(b"password123\n").unwrap();
+        drop(tx);
+
+        prompt_password(rx.as_fd(), &mut sink, "", None, Hidden::No).unwrap();
+
+        assert!(sink.is_empty());
+    }
+
+    #[test]
+    fn displayed_prompt_ends_with_newline() {
+        let mut sink = Vec::new();
+        let (rx, mut tx) = make_pipe();
+        tx.write_all(b"password123\n").unwrap();
+        drop(tx);
+
+        prompt_password(rx.as_fd(), &mut sink, "Password: ", None, Hidden::No).unwrap();
+
+        assert_eq!(sink, b"Password: \n");
+    }
+
+    #[test]
     fn miri_test_longpwd() {
         let mut stdout = Vec::new();
         let (rx, mut tx) = make_pipe();

@@ -273,6 +273,11 @@ pub(crate) struct TtyGuard(File, FileLock);
 /// Lock the tty to prevent contention over who owns the password prompt
 pub(crate) fn lock_tty() -> Option<TtyGuard> {
     let tty = File::open("/dev/tty").ok()?;
+    // og-sudo uses fcntl(F_SETLKW) instead of the flock() that FileLock::exclusive does.
+    // This does mean in the unlikely case that sudo-rs and og-sudo are used inside the
+    // same pipeline, they will still fight for access to the tty. Adding a separate lock
+    // implementation for the tty is probably not worth it and changing the timestamp code
+    // to use fcntl(F_SETLKW) is iffy as flock() is much better behaved.
     let lock = FileLock::exclusive(&tty, false).ok()?;
 
     Some(TtyGuard(tty, lock))

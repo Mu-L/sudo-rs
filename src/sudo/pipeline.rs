@@ -167,6 +167,8 @@ fn auth_and_update_record_file(
         }
     };
 
+    // To prevent two sudo-rs instances asking for a password at the same time,
+    // we try to obtain a file lock on the TTY in certain cases.
     let _guard = if context.non_interactive || context.stdin || context.askpass {
         None
     } else {
